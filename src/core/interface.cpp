@@ -1,0 +1,149 @@
+#include <mgba/core/interface.h>
+
+#include <mgba/core/core.h>
+#include <mgba/core/serialize.h>
+
+DEFINE_VECTOR(mCoreCallbacksList, struct mCoreCallbacks);
+
+static void _rtcGenericSample(struct mRTCSource* source) {
+	struct mRTCGenericSource* rtc = (struct mRTCGenericSource*) source;
+	switch (rtc->override) {
+	default:
+		if (rtc->custom->sample) {
+			return rtc->custom->sample(rtc->custom);
+		}
+		break;
+	case RTC_NO_OVERRIDE:
+	case RTC_FIXED:
+	case RTC_FAKE_EPOCH:
+	case RTC_WALLCLOCK_OFFSET:
+		break;
+	}
+}
+
+static time_t _rtcGenericCallback(struct mRTCSource* source) {
+	struct mRTCGenericSource* rtc = (struct mRTCGenericSource*) source;
+	switch (rtc->override) {
+	default:
+		if (rtc->custom->unixTime) {
+			return rtc->custom->unixTime(rtc->custom);
+		}
+		// Fall through
+	case RTC_NO_OVERRIDE:
+		return time(0);
+	case RTC_FIXED:
+		return rtc->value / 1000LL;
+	case RTC_FAKE_EPOCH:
+		return (rtc->value + rtc->p->frameCounter(rtc->p) * (rtc->p->frameCycles(rtc->p) * 1000LL) / rtc->p->frequency(rtc->p)) / 1000LL;
+	case RTC_WALLCLOCK_OFFSET:
+		return time(0) + rtc->value / 1000LL;
+	}
+}
+
+static void _rtcGenericSerialize(struct mRTCSource* source, struct mStateExtdataItem* item) {
+	struct mRTCGenericSource* rtc = (struct mRTCGenericSource*) source;
+	struct mRTCGenericState state = {
+		.type = rtc->override,
+		.padding = 0,
+		.value = rtc->value
+	};
+	void* data;
+	if (rtc->override >= RTC_CUSTOM_START && rtc->custom->serialize) {
+		rtc->custom->serialize(rtc->custom, item);
+		data = malloc(item->size + sizeof(state));
+		uint8_t* oldData = static_cast<uint8_t*>(data);
+		oldData += sizeof(state);
+		memcpy(oldData, item->data, item->size);
+		item->size += sizeof(state);
+		if (item->clean) {
+			item->clean(item->data);
+		}
+	} else {
+		item->size = sizeof(state);
+		data = malloc(item->size);
+	}
+	memcpy(data, &state, sizeof(state));
+	item->data = data;
+	item->clean = free;
+}
+
+static bool _rtcGenericDeserialize(struct mRTCSource* source, const struct mStateExtdataItem* item) {
+	struct mRTCGenericSource* rtc = (struct mRTCGenericSource*) source;
+	struct mRTCGenericState* state = static_cast<struct mRTCGenericState*>(item->data);
+	if (!state || item->size < (ssize_t) sizeof(*state)) {
+		return false;
+	}
+	if (state->type >= RTC_CUSTOM_START) {
+		if (!rtc->custom) {
+			return false;
+		}
+		if (rtc->custom->deserialize) {
+			uint8_t* oldData = static_cast<uint8_t*>(item->data);
+			oldData += sizeof(state);
+			struct mStateExtdataItem fakeItem = {
+				.size = static_cast<int32_t>(item->size - sizeof(*state)),
+				.data = oldData,
+				.clean = NULL
+			};
+			if (!rtc->custom->deserialize(rtc->custom, &fakeItem)) {
+				return false;
+			}
+		}
+	}
+	rtc->value = state->value;
+	rtc->override = static_cast<enum mRTCGenericType>(state->type);
+	return true;
+}
+
+void mRTCGenericSourceInit(struct mRTCGenericSource* rtc, struct mCore* core) {
+	memset(rtc, 0, sizeof(*rtc));
+	rtc->p = core;
+	rtc->override = RTC_NO_OVERRIDE;
+	rtc->d.sample = _rtcGenericSample;
+	rtc->d.unixTime = _rtcGenericCallback;
+	rtc->d.serialize = _rtcGenericSerialize;
+	rtc->d.deserialize = _rtcGenericDeserialize;
+}
+
+static void _mRumbleIntegratorReset(struct mRumble* rumble, bool enable) {
+	struct mRumbleIntegrator* integrator = (struct mRumbleIntegrator*) rumble;
+	integrator->state = enable;
+	integrator->timeOn = 0;
+	integrator->totalTime = 0;
+}
+
+static void _mRumbleIntegratorSetRumble(struct mRumble* rumble, bool enable, uint32_t sinceLast) {
+	struct mRumbleIntegrator* integrator = (struct mRumbleIntegrator*) rumble;
+
+	if (integrator->state) {
+		integrator->timeOn += sinceLast;
+	}
+	integrator->totalTime += sinceLast;
+	integrator->state = enable;
+}
+
+static void _mRumbleIntegratorIntegrate(struct mRumble* rumble, uint32_t period) {
+	if (!period) {
+		return;
+	}
+
+	struct mRumbleIntegrator* integrator = (struct mRumbleIntegrator*) rumble;
+	if (integrator->state) {
+		integrator->timeOn += period - integrator->totalTime;
+	}
+	integrator->setRumble(integrator, fminf(integrator->timeOn / (float) period, 1.0f));
+
+	integrator->totalTime = 0;
+	integrator->timeOn = 0;
+}
+
+void mRumbleIntegratorInit(struct mRumbleIntegrator* integrator) {
+	memset(integrator, 0, sizeof(*integrator));
+	integrator->d.reset = _mRumbleIntegratorReset;
+	integrator->d.setRumble = _mRumbleIntegratorSetRumble;
+	integrator->d.integrate = _mRumbleIntegratorIntegrate;
+}
+
+void mRumbleIntegratorReset(struct mRumbleIntegrator* integrator) {
+	_mRumbleIntegratorReset(&integrator->d, false);
+}

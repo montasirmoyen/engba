@@ -1,0 +1,26 @@
+#include "GBOverride.h"
+
+#include <mgba/core/core.h>
+#include <mgba/internal/gb/gb.h>
+#include <mgba-util/crc32.h>
+
+using namespace QGBA;
+
+void GBOverride::identify(const struct mCore* core) {
+	if (core->platform(core) != mPLATFORM_GB) {
+		return;
+	}
+	GB* gb = static_cast<GB*>(core->board);
+	if (!gb->memory.rom || gb->memory.romSize < sizeof(struct GBCartridge) + 0x100) {
+		return;
+	}
+	override.headerCrc32 = doCrc32(&gb->memory.rom[0x100], sizeof(struct GBCartridge));
+}
+
+void GBOverride::save(struct Configuration* config) const {
+	GBOverrideSave(config, &override);
+}
+
+const void* GBOverride::raw() const {
+	return &override;
+}

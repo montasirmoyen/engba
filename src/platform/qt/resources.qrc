@@ -1,0 +1,43 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+ <qresource>
+  <file>../../../graphics/mgba-1024.png</file>
+  <file>../../../graphics/mgba-256.png</file>
+  <file>../../../graphics/mgba-48.png</file>
+  <file>../../../graphics/keymap.qpic</file>
+  <file>../../../graphics/patrons.txt</file>
+  <file>../../../graphics/no-cam.png</file>
+  <file>../../../graphics/gb-icon-256.png</file>
+  <file>../../../graphics/gb-icon-128.png</file>
+  <file>../../../graphics/gb-icon-32.png</file>
+  <file>../../../graphics/gb-icon-24.png</file>
+  <file>../../../graphics/gb-icon-16.png</file>
+  <file>../../../graphics/gb-icon.svg</file>
+  <file>../../../graphics/gbc-icon-256.png</file>
+  <file>../../../graphics/gbc-icon-128.png</file>
+  <file>../../../graphics/gbc-icon-32.png</file>
+  <file>../../../graphics/gbc-icon-24.png</file>
+  <file>../../../graphics/gbc-icon-16.png</file>
+  <file>../../../graphics/gbc-icon.svg</file>
+  <file>../../../graphics/sgb-icon-256.png</file>
+  <file>../../../graphics/sgb-icon-128.png</file>
+  <file>../../../graphics/sgb-icon-32.png</file>
+  <file>../../../graphics/sgb-icon-24.png</file>
+  <file>../../../graphics/sgb-icon-16.png</file>
+  <file>../../../graphics/sgb-icon.svg</file>
+  <file>../../../graphics/gba-icon-256.png</file>
+  <file>../../../graphics/gba-icon-128.png</file>
+  <file>../../../graphics/gba-icon-32.png</file>
+  <file>../../../graphics/gba-icon-24.png</file>
+  <file>../../../graphics/gba-icon-16.png</file>
+  <file>../../../graphics/gba-icon.svg</file>
+ </qresource>
+ <qresource prefix="/exe">
+  <file alias="exe4/chip-names.txt">../../../graphics/exe4/chip-names.txt</file>
+  <file alias="exe4/placeholder.png">../../../graphics/exe4/placeholder.png</file>
+  <file alias="exe5/chip-names.txt">../../../graphics/exe5/chip-names.txt</file>
+  <file alias="exe5/placeholder.png">../../../graphics/exe5/placeholder.png</file>
+  <file alias="exe6/chip-names.txt">../../../graphics/exe6/chip-names.txt</file>
+  <file alias="exe6/placeholder.png">../../../graphics/exe6/placeholder.png</file>
+ </qresource>
+</RCC>

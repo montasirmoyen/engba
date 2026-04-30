@@ -1,0 +1,43 @@
+#pragma once
+
+#include <QStringList>
+
+#include "ui_ScriptingView.h"
+
+class QStringListModel;
+
+namespace QGBA {
+
+class ConfigController;
+class ScriptingController;
+class ScriptingTextBuffer;
+
+class ScriptingView : public QMainWindow {
+Q_OBJECT
+
+public:
+	ScriptingView(ScriptingController* controller, ConfigController* config, QWidget* parent = nullptr);
+
+private slots:
+	void submitRepl(const QString& line);
+	void load();
+	void loadMostRecent();
+
+	void controllerReset();
+	void selectBuffer(const QModelIndex& current, const QModelIndex& = QModelIndex());
+
+private:
+	void appendMRU(const QString&);
+	void updateMRU();
+	void checkEmptyMRU();
+
+	Ui::ScriptingView m_ui;
+
+	ConfigController* m_config;
+	ScriptingController* m_controller;
+	QStringList m_mruFiles;
+	QTextDocument* m_blankDocument;
+	QStringListModel* m_history;
+};
+
+}

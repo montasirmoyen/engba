@@ -1,0 +1,45 @@
+#pragma once
+
+#include <QAbstractListModel>
+
+namespace QGBA {
+
+class ShortcutController;
+class Shortcut;
+
+class ShortcutModel : public QAbstractItemModel {
+Q_OBJECT
+
+public:
+	ShortcutModel(QObject* parent = nullptr);
+
+	void setController(ShortcutController* controller);
+
+	virtual QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+
+	virtual QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+
+	virtual QModelIndex index(int row, int column, const QModelIndex& parent = QModelIndex()) const override;
+	virtual QModelIndex parent(const QModelIndex& index) const override;
+
+	virtual int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+	virtual int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+
+	QString name(const QModelIndex&) const;
+
+private slots:
+	void addRowNamed(const QString&);
+	void clearMenu(const QString&);
+
+private:
+	ShortcutController* m_controller = nullptr;
+
+	struct Item {
+		QString name;
+		const Shortcut* shortcut = nullptr;
+	};
+
+	mutable QHash<size_t, Item> m_cache;
+};
+
+}
